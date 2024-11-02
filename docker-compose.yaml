@@ -1,0 +1,32 @@
+version: "1.0"
+services:
+  postgresdb:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5151:5432"
+    
+  backend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgresdb
+    env_file:
+      - .env
+
+  frontend:
+    build:
+      context: ./src/notifications-fe
+      dockerfile: Dockerfile
+    ports:
+      - "3173:3173"
+    env_file:
+      - .env
