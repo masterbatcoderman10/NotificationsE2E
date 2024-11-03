@@ -1,6 +1,10 @@
 .DS_Store
 venv/
 __pycache__/
+*.pyc
+postgres-data/
+.env.production
+.env
 
 # Logs
 logs

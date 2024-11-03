@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from .db import database
 
 class StatusUpdate(BaseModel):
     status: str
@@ -21,14 +22,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+# shutdown event
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
+
 @app.get("/")
-def read_root():
+async def read_root():
     return {"Hello": "World"}
 
 @app.get("/status")
-def get_status():
+async def get_status():
     return {"status" : "all is well"}
 
 @app.post("/status")
-def post_status(status_update: StatusUpdate):
+async def post_status(status_update: StatusUpdate):
     return {"message" : f"status updated to {status_update.status}"}
