@@ -1,12 +1,21 @@
+from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .db import database
-from .dependencies import create_get_notification, create_post_notification
-from .crud import get_status_crud, create_status, create_notification
+from .dependencies import create_notification_task
+from .crud import get_status_crud, create_status, create_notification, get_notification_crud, update_notification_crud
 
 class StatusUpdate(BaseModel):
     status: str
+
+class Notification(BaseModel):
+    id: int
+    message: str
+    time_since: str
+class NotificationsResponse(BaseModel):
+    unread: List[Notification]
+    read: List[Notification]
 
 app = FastAPI()
 
@@ -37,13 +46,27 @@ async def shutdown():
 async def read_root():
     return {"Hello": "World"}
 
+# Modified API endpoints
 @app.get("/status")
 async def get_status():
-    
-    create_get_notification.delay()
+    create_notification_task.delay("Status requested")
     return await get_status_crud()
 
 @app.post("/status")
 async def post_status(status_update: StatusUpdate):
-    create_post_notification.delay()
+    create_notification_task.delay(f"Status updated to {status_update.status}")
     return await create_status(status_update.status)
+
+@app.get("/notifications", response_model=NotificationsResponse)
+async def get_notifications():
+    
+    notifications = await get_notification_crud()
+
+    return NotificationsResponse(
+        unread=notifications["unread"],
+        read=notifications["read"]
+    )
+
+@app.patch("/notifications/{notification_id}")
+async def update_notification(notification_id: int):
+    return await update_notification_crud(notification_id=notification_id)
