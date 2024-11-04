@@ -3,9 +3,10 @@ from sqlalchemy.orm import DeclarativeBase
 from databases import Database
 import os
 from dotenv import load_dotenv
-from sqlalchemy import String, DateTime, Integer
+from sqlalchemy import String, DateTime, Integer, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
+from .models import NotificationStatus
 
 class Base(DeclarativeBase):
     pass
@@ -14,6 +15,14 @@ class Status(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     status_message: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+class Notification(Base):
+    __tablename__ = "notification"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    message: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[NotificationStatus] = mapped_column(Enum(NotificationStatus), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 load_dotenv()
