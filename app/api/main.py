@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .db import database
+from .dependencies import create_get_notification, create_post_notification
 
 class StatusUpdate(BaseModel):
     status: str
@@ -37,8 +38,11 @@ async def read_root():
 
 @app.get("/status")
 async def get_status():
+    
+    create_get_notification.delay()
     return {"status" : "all is well"}
 
 @app.post("/status")
 async def post_status(status_update: StatusUpdate):
+    create_post_notification.delay()
     return {"message" : f"status updated to {status_update.status}"}
