@@ -1,9 +1,9 @@
 from typing import List
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .db import database
-from .dependencies import create_notification_task
+from .dependencies import create_notification_task, web_socket_manager
 from .crud import get_status_crud, create_status, create_notification, get_notification_crud, update_notification_crud
 
 class StatusUpdate(BaseModel):
@@ -70,3 +70,14 @@ async def get_notifications():
 @app.patch("/notifications/{notification_id}")
 async def update_notification(notification_id: int):
     return await update_notification_crud(notification_id=notification_id)
+
+# Websocket endpoint
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    await web_socket_manager.connect(user_id, websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await web_socket_manager.send_personal_message({"message": data}, user_id)
+    except:
+        web_socket_manager.disconnect(user_id)

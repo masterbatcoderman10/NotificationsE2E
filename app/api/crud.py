@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from .db import database, Status, Notification
 from .models import NotificationStatus
 from datetime import datetime, timedelta
@@ -118,7 +118,7 @@ async def get_notification_crud() -> Notification:
 
 async def update_notification_crud(notification_id: int) -> dict:
 
-    stmt = Notification.update().where(
+    stmt = update(Notification).where(
         Notification.id == notification_id).values(status=NotificationStatus.READ)
 
     try:
