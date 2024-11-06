@@ -26,11 +26,30 @@ class ConnectionManager:
 
 web_socket_manager = ConnectionManager()
 
+async def send_notification_to_websocket(task_result, user_id, message):
+    #send notification to websocket
+    while not task_result.ready():
+        await asyncio.sleep(1)
+    
+    if task_result.successful():
+        payload = {
+            "id": task_result.result["id"],
+            "message": message,
+            "time_since": "1s +"
+        }
+
+        await web_socket_manager.send_personal_message(payload, user_id)
+
 load_dotenv()
 
 BROKER_HOST = os.getenv("BROKER_HOST")
+REDIS_HOST = os.getenv("REDIS_HOST")
 
-celery = Celery('tasks', broker=f'pyamqp://guest@{BROKER_HOST}//')
+celery = Celery(
+    'tasks', 
+    result_backend=f'redis://{REDIS_HOST}',
+    broker=f'pyamqp://guest@{BROKER_HOST}//'
+)
 
 def run_async(coro):
     """Helper function to run async code in celery task"""

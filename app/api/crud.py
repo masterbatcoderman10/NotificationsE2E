@@ -52,11 +52,12 @@ async def get_status_crud() -> Status:
 async def create_notification(message: str) -> dict:
 
     stmt = insert(Notification).values(
-        message=message, status=NotificationStatus.UNREAD, created_at=datetime.utcnow())
+        message=message, status=NotificationStatus.UNREAD, created_at=datetime.utcnow()
+    ).returning(Notification.id)
 
     try:
-        await database.execute(stmt)
-        return {"message": "notification created"}
+        notification_id = await database.execute(stmt)
+        return {"message": "notification created", "id": notification_id}
     except Exception as e:
         raise e
 

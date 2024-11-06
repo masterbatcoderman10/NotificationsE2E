@@ -27,7 +27,9 @@
             }
 
             socket.onmessage = (event) => {
-            console.log('Message received:', event.data);
+                const data = JSON.parse(event.data) as Notification;
+                console.log('Message from server:', data);
+                unreadNotifications = [data, ...unreadNotifications];
             }
         } catch (error) {
             console.error('Error connecting to server:', error);

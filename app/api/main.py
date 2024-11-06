@@ -1,9 +1,9 @@
 from typing import List
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .db import database
-from .dependencies import create_notification_task, web_socket_manager
+from .dependencies import create_notification_task, web_socket_manager, send_notification_to_websocket
 from .crud import get_status_crud, create_status, create_notification, get_notification_crud, update_notification_crud
 
 class StatusUpdate(BaseModel):
@@ -48,13 +48,19 @@ async def read_root():
 
 # Modified API endpoints
 @app.get("/status")
-async def get_status():
-    create_notification_task.delay("Status requested")
+async def get_status(
+    background_tasks: BackgroundTasks
+):
+    result = create_notification_task.delay("Status requested")
+    #send a notification through the websocket using background tasks
+    background_tasks.add_task(send_notification_to_websocket, result, "1", "Status requested")
     return await get_status_crud()
 
 @app.post("/status")
-async def post_status(status_update: StatusUpdate):
-    create_notification_task.delay(f"Status updated to {status_update.status}")
+async def post_status(status_update: StatusUpdate, background_tasks: BackgroundTasks):
+    result = create_notification_task.delay(f"Status updated to {status_update.status}")
+    #send a notification through the websocket using background tasks
+    background_tasks.add_task(send_notification_to_websocket, result, "1", f"Status updated to {status_update.status}")
     return await create_status(status_update.status)
 
 @app.get("/notifications", response_model=NotificationsResponse)
